@@ -1460,38 +1460,38 @@ recurrence.widget.RuleWeeklyForm.prototype = {
     init_dom: function() {
         var form = this;
 
-        var weekday_grid = new recurrence.widget.Grid(7, 1);
-        var days = [];
-        var days = recurrence.array.foreach(
-            this.rule.byday, function(day) {
-                return recurrence.to_weekday(day).number;
-            });
-        for (var x=0; x < 7; x++) {
-            var cell = weekday_grid.cell(x, 0);
-            if (days.indexOf(x) > -1)
-                recurrence.widget.add_class(cell, 'active');
-            cell.value = x;
-            cell.innerHTML = recurrence.display.weekdays_short[x];
-            cell.onclick = function () {
-                if (weekday_grid.disabled)
-                    return;
-                if (recurrence.widget.has_class(this, 'active'))
-                    recurrence.widget.remove_class(this, 'active');
-                else
-                    recurrence.widget.add_class(this, 'active');
-                form.set_byday();
-            };
-        }
+        // var weekday_grid = new recurrence.widget.Grid(7, 1);
+        // var days = [];
+        // var days = recurrence.array.foreach(
+        //     this.rule.byday, function(day) {
+        //         return recurrence.to_weekday(day).number;
+        //     });
+        // for (var x=0; x < 7; x++) {
+        //     var cell = weekday_grid.cell(x, 0);
+        //     if (days.indexOf(x) > -1)
+        //         recurrence.widget.add_class(cell, 'active');
+        //     cell.value = x;
+        //     cell.innerHTML = recurrence.display.weekdays_short[x];
+        //     cell.onclick = function () {
+        //         if (weekday_grid.disabled)
+        //             return;
+        //         if (recurrence.widget.has_class(this, 'active'))
+        //             recurrence.widget.remove_class(this, 'active');
+        //         else
+        //             recurrence.widget.add_class(this, 'active');
+        //         form.set_byday();
+        //     };
+        // }
 
         var weekday_container = recurrence.widget.e(
             'div', {'class': 'section'});
-        weekday_container.appendChild(weekday_grid.elements.root);
+        // weekday_container.appendChild(weekday_grid.elements.root);
         var root = recurrence.widget.e(
             'div', {'class': 'weekly hidden'}, [weekday_container]);
 
         this.elements = {
             'root': root,
-            'weekday_grid': weekday_grid
+            // 'weekday_grid': weekday_grid
         };
     },
 
