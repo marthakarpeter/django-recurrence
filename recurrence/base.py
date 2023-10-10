@@ -8,13 +8,13 @@ parameter. Also, the `byweekday` parameter in `dateutil.rrule` is
 `byday` in this package to reflect the specification. See the `Rule`
 and `Recurrence` class documentation for details on the differences.
 """
-
 import re
 import datetime
 import calendar
 
 import dateutil.rrule
 from dateutil import tz
+from typing import Union
 
 from django.utils import dateformat
 from django.utils.timezone import get_current_timezone, is_aware, is_naive, make_aware
@@ -507,6 +507,12 @@ class Recurrence:
         return self.to_dateutil_rruleset(
             dtstart, dtend, cache).between(after, before, inc)
 
+    def set_time_to_midday(self, date: Union[datetime.datetime, datetime.date]):
+        midday = datetime.time(12, 12, 12)
+        if type(date) == datetime.datetime:
+            return datetime.datetime.combine(date.date(), midday)
+        return datetime.datetime.combine(date, midday)
+
     def to_dateutil_rruleset(self, dtstart=None, dtend=None, cache=False):
         """
         Create a `dateutil.rrule.rruleset` instance from this
@@ -543,8 +549,11 @@ class Recurrence:
         dtend = dtend or self.dtend
         include_dtstart = self.include_dtstart
 
+        dtstart = self.set_time_to_midday(dtstart or datetime.datetime.now())
+
         if dtend:
-            dtend = normalize_offset_awareness(dtend or self.dtend, dtstart)
+            dtend = self.set_time_to_midday(dtend or self.dtend)
+            # dtend = normalize_offset_awareness(dtend or self.dtend, dtstart)
 
         if cache:
             # we need to cache an instance for each unique dtstart
@@ -563,7 +572,8 @@ class Recurrence:
         if include_dtstart and dtstart is not None:
             rruleset.rdate(dtstart)
         for rdate in self.rdates:
-            rdate = normalize_offset_awareness(rdate, dtstart)
+            rdate = self.set_time_to_midday(rdate)
+            # rdate = normalize_offset_awareness(rdate, dtstart)
             if dtend is not None and rdate < dtend:
                 rruleset.rdate(rdate)
             elif not dtend:
@@ -572,7 +582,8 @@ class Recurrence:
             rruleset.rdate(dtend)
 
         for exdate in self.exdates:
-            exdate = normalize_offset_awareness(exdate, dtstart)
+            exdate = self.set_time_to_midday(exdate)
+            # exdate = normalize_offset_awareness(exdate, dtstart)
             if dtend is not None and exdate < dtend:
                 rruleset.exdate(exdate)
             elif not dtend:
@@ -961,24 +972,27 @@ def deserialize(text, include_dtstart=True):
             year, month, day = int(text[:4]), int(text[4:6]), int(text[6:8])
         except ValueError:
             raise exceptions.DeserializationError('malformed date-time: %r' % text)
-        if u'T' in text:
-            # time is also specified
-            try:
-                hour, minute, second = (
-                    int(text[9:11]), int(text[11:13]), int(text[13:15]))
-            except ValueError:
-                raise exceptions.DeserializationError('malformed date-time: %r' % text)
-        else:
-            # only date is specified, use midnight
-            hour, minute, second = (0, 0, 0)
-        if u'Z' in text:
-            # time is in utc
-            tzinfo = tz.UTC
-        else:
-            # right now there is no support for VTIMEZONE/TZID since
-            # this is a partial implementation of rfc2445 so we'll
-            # just use the time zone specified in the Django settings.
-            tzinfo = get_current_timezone()
+        # don't use time, just date is relevant
+        hour, minute, second = (12, 12, 12)
+        tzinfo = tz.UTC
+        # if u'T' in text:
+        #     # time is also specified
+        #     try:
+        #         hour, minute, second = (
+        #             int(text[9:11]), int(text[11:13]), int(text[13:15]))
+        #     except ValueError:
+        #         raise exceptions.DeserializationError('malformed date-time: %r' % text)
+        # else:
+        #     # only date is specified, use midnight
+        #     hour, minute, second = (0, 0, 0)
+        # if u'Z' in text:
+        #     # time is in utc
+        #     tzinfo = tz.UTC
+        # else:
+        #     # right now there is no support for VTIMEZONE/TZID since
+        #     # this is a partial implementation of rfc2445 so we'll
+        #     # just use the time zone specified in the Django settings.
+        #     tzinfo = get_current_timezone()
 
         dt = datetime.datetime(
             year, month, day, hour, minute, second, tzinfo=tzinfo)
