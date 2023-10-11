@@ -379,7 +379,7 @@ recurrence.widget.DateSelector.prototype = {
     set_date: function(datestring) {
         var tokens = datestring.split('-');
         var year = parseInt(tokens[0], 10);
-	var month = parseInt(tokens[1], 10) - 1;
+	    var month = parseInt(tokens[1], 10) - 1;
         var day = parseInt(tokens[2], 10);
         var dt = new Date(year, month, day);
 
@@ -477,8 +477,35 @@ recurrence.widget.Widget.prototype = {
 
         var panels = recurrence.widget.e('div', {'class': 'panels'});
         var control = recurrence.widget.e('div', {'class': 'control'});
+
+        var start_date_selector = new recurrence.widget.DateSelector(
+            this.date, {
+                'value': this.date,
+                'onchange': function(date) {
+                    date.setTime(new Date(
+                        date.getFullYear(), date.getMonth(), date.getDate(),
+                        12, 12, 12)
+                    )
+                    formatted_date = recurrence.date.format(date, '%Y-%m-%d');
+                    // TODO: set this date to be displayed in the date field
+                    //      and set it as recurrence.dtstart in the recurrence object
+                    //      and prefill with the dtstart from the db if it exists
+                    this.dtstart = formatted_date;
+                    this.elements.date_field.value = formatted_date;
+                    console.log(this)
+                    console.log(this.elements.date_field.value)
+                    },
+            });
+        var start_label = recurrence.widget.e(
+            'span', {'class': 'recurrence-label'},
+            recurrence.display.labels.start_at + ':');
+        var start_container = recurrence.widget.e(
+            'h2', {'class': 'start'},
+            [start_label, start_date_selector.elements.root]);
+
+
         var root = recurrence.widget.e(
-            'div', {'class': this.textarea.className}, [panels, control]);
+            'div', {'class': this.textarea.className}, [start_container, panels, control]);
 
         var add_rule = new recurrence.widget.AddButton(
             recurrence.display.labels.add_rule, {
@@ -497,7 +524,8 @@ recurrence.widget.Widget.prototype = {
         this.elements = {
             'root': root,
             'panels': panels,
-            'control': control
+            'control': control,
+            'start_container': start_container,
         };
 
         // attach immediately
@@ -662,8 +690,11 @@ recurrence.widget.Panel.prototype = {
             'div', {'class': 'panel'}, [header, body]);
 
         this.elements = {
-            'root': root, 'remove': remove, 'label': label,
-            'header': header, 'body': body
+            'root': root,
+            'remove': remove,
+            'label': label,
+            'header': header,
+            'body': body
         };
 
         this.collapse();
@@ -715,7 +746,7 @@ recurrence.widget.RuleForm.prototype = {
         this.options = options || {};
 
         var rule_options = {
-            interval: rule.interval, until: rule.until, count: rule.count
+            interval: rule.interval, until: rule.until, count: rule.count,
         };
 
         this.freq_rules = [
@@ -1780,6 +1811,7 @@ recurrence.display.labels = {
     'date': gettext('Date'),
     'time': gettext('Time'),
     'repeat_until': gettext('Repeat until'),
+    'start_at': gettext('Start at'),
     'exclude_occurrences': gettext('Exclude these occurences'),
     'exclude_date': gettext('Exclude this date'),
     'add_rule': gettext('Add rule'),
