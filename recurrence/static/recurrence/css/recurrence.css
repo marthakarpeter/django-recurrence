@@ -305,3 +305,8 @@ table.recurrence-calendar .footer {
     border-bottom: 1px solid #ccc;
     border-right: 1px solid #ccc;
 }
+
+.disabled {
+    color: lightgrey;
+    pointer-events: none;
+}

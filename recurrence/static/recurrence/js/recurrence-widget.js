@@ -52,6 +52,10 @@ recurrence.widget.Grid.prototype = {
     }
 };
 
+Date.prototype.getIsoWeekday = function() {
+    var day = this.getDay();
+    return day === 0 ? 7 : day;
+};
 
 recurrence.widget.Calendar = function(date, options) {
     this.init(date, options);
@@ -67,6 +71,8 @@ recurrence.widget.Calendar.prototype = {
             this.onchange = this.options.onchange;
         if (this.options.onclose)
             this.onclose = this.options.onclose;
+
+        this.allowedWeekdays = recurrence.dtstart ? [recurrence.dtstart.getIsoWeekday()] : [];
 
         this.init_dom();
         this.show_month(this.year, this.month);
@@ -175,17 +181,26 @@ recurrence.widget.Calendar.prototype = {
                     recurrence.widget.add_class(cell, 'empty');
                 } else {
                     recurrence.widget.add_class(cell, 'day');
-                    if (this.date.getDate() == number &&
-                        this.date.getFullYear() == dt.getFullYear() &&
-                        this.date.getMonth() == dt.getMonth())
-                        recurrence.widget.add_class(cell, 'active');
-                    cell.innerHTML = number;
-                    number = number + 1;
-                    cell.onclick = function () {
-                        calendar.set_date(
-                            calendar.year, calendar.month,
-                            parseInt(this.innerHTML, 10));
-                    };
+                    var date = new Date(year, month, number);
+                    if (this.allowedWeekdays.length === 0 || this.allowedWeekdays.includes(date.getDay())) {
+                        if (this.date.getDate() == number &&
+                            this.date.getFullYear() == dt.getFullYear() &&
+                            this.date.getMonth() == dt.getMonth())
+                            recurrence.widget.add_class(cell, 'active');
+
+                        cell.innerHTML = number;
+                        number = number + 1;
+                        cell.onclick = function () {
+                            calendar.set_date(
+                                calendar.year, calendar.month,
+                                parseInt(this.innerHTML, 10)
+                            );
+                        };
+                    } else {
+                        recurrence.widget.add_class(cell, 'disabled');
+                        cell.innerHTML = number;
+                        number = number + 1;
+                    }
                 }
             }, this);
 
@@ -306,6 +321,7 @@ recurrence.widget.DateSelector.prototype = {
             'input', {
                 'class': 'date-field', 'size': 10,
                 'value': date_value,
+                'style': 'color: black !important;',
                 'onchange': function() {dateselector.set_date(this.value);}});
         var calendar_button = recurrence.widget.e(
             'a', {
@@ -462,6 +478,14 @@ recurrence.widget.Widget.prototype = {
         this.selected_panel = null;
         this.panels = [];
         this.data = recurrence.deserialize(textarea.value);
+
+        if (this.data['dtstart'])
+            this.date = this.data['dtstart'];
+        else
+            this.date = new Date();
+
+        recurrence.dtstart = this.date;
+
         this.textarea = textarea;
         this.options = options;
 
@@ -490,12 +514,14 @@ recurrence.widget.Widget.prototype = {
                     // TODO: set this date to be displayed in the date field
                     //      and set it as recurrence.dtstart in the recurrence object
                     //      and prefill with the dtstart from the db if it exists
-                    this.dtstart = formatted_date;
+
                     this.elements.date_field.value = formatted_date;
-                    console.log(this)
-                    console.log(this.elements.date_field.value)
-                    },
-            });
+                    this.dtstart = date;
+
+                    widget.update();
+                },
+            }
+        );
         var start_label = recurrence.widget.e(
             'span', {'class': 'recurrence-label'},
             recurrence.display.labels.start_at + ':');
