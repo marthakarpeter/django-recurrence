@@ -514,9 +514,9 @@ recurrence.widget.Widget.prototype = {
                     // TODO: set this date to be displayed in the date field
                     //      and set it as recurrence.dtstart in the recurrence object
                     //      and prefill with the dtstart from the db if it exists
+                    this.dtstart = formatted_date;
 
                     this.elements.date_field.value = formatted_date;
-                    this.dtstart = date;
 
                     widget.update();
                 },
